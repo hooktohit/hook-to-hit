@@ -1,0 +1,9 @@
+{
+  "name": "hook-to-hit",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@netlify/functions": "^6.1.0",
+    "razorpay": "^2.9.8"
+  }
+}

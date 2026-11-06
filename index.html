@@ -142,6 +142,8 @@ section { padding-block: 64px; }
 .checks li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; }
 .checks li::before { content: "+1"; font-family: var(--font-num); font-size: 0.72rem; font-weight: 700; color: var(--gate); padding-top: 3px; }
 .notice { border-radius: 10px; padding: 12px 14px; background: var(--trap-soft); color: var(--ink); font-size: var(--step--1); }
+.notice.ok { background: var(--gate-soft); display: grid; gap: 8px; }
+.btn[disabled] { opacity: 0.6; cursor: wait; }
 .honest { display: grid; gap: 12px; }
 .honest p { color: var(--muted); }
 
@@ -356,7 +358,8 @@ figure { margin: 0; }
           <li>12-week plan with weekly tasks</li>
         </ul>
         <button class="btn" type="button" id="buy-btn">Pay with UPI, card or netbanking</button>
-        <p class="notice" id="buy-msg" hidden>Online payment is not connected yet. Please check back soon.</p>
+        <p class="notice" id="buy-msg" role="alert" hidden></p>
+        <div class="notice ok" id="buy-ok" role="status" hidden></div>
         <p class="note" style="margin-top:0">After payment you receive an access code on the confirmation screen and by email. Enter it under <a href="#learn">My course</a>.</p>
       </div>
       <div class="honest">
@@ -406,11 +409,11 @@ figure { margin: 0; }
 <main id="view-lesson" class="wrap" hidden></main>
 <main id="view-learn" class="wrap" hidden></main>
 
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
 /* ======= SETTINGS: change these before you share the site ======= */
 const CONFIG = {
   price: "₹29",
-  paymentLink: "",                       // paste your Razorpay / Instamojo / Cashfree payment page link here
   contactEmail: "hello@yourdomain.in",    // your support email
   ownerName: "Hook to Hit Academy",       // your name or business name
   accessCodeSha256: "282c4e5a76e51fa9dad53eb58bfe5ead2f0c1e319f785999970b895adabb884b" // SHA-256 of your access code
@@ -674,13 +677,63 @@ function levelCard(m, href) {
 
 $("#stages").innerHTML = STAGES.map((s, i) => `<div class="stage"><div class="stage-gate"><b>${s.name}</b><span>gate ${i + 1} · ${s.note}</span></div>${s.mods.map(n => levelCard(MODULES[n - 1], n === 1 ? "#lesson-1" : "#learn")).join("")}</div>`).join("");
 
-/* ---------- buy button ---------- */
-$("#buy-btn").addEventListener("click", () => {
-  if (CONFIG.paymentLink) { window.location.href = CONFIG.paymentLink; }
-  else { $("#buy-msg").hidden = false; }
-});
-document.querySelectorAll("[data-buy]").forEach(a => {
-  if (CONFIG.paymentLink) { a.href = CONFIG.paymentLink; a.target = "_blank"; a.rel = "noopener"; }
+/* ---------- buy button (Razorpay Standard Checkout) ---------- */
+const buyBtn = $("#buy-btn"), buyLabel = buyBtn.textContent;
+function buyError(text) { $("#buy-ok").hidden = true; $("#buy-msg").textContent = text; $("#buy-msg").hidden = false; }
+function buyBusy(on, label) { buyBtn.disabled = on; buyBtn.textContent = on ? label : buyLabel; }
+const escapeHtml = t => String(t).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+async function postJson(url, data) {
+  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data || {}) });
+  let json = {};
+  try { json = await res.json(); } catch (e) {}
+  if (!res.ok) throw new Error(json.error || "Something went wrong. Please try again.");
+  return json;
+}
+async function verifyPayment(resp) {
+  buyBusy(true, "Confirming payment…");
+  try {
+    const result = await postJson("/api/verify-payment", {
+      razorpay_payment_id: resp.razorpay_payment_id,
+      razorpay_order_id: resp.razorpay_order_id,
+      razorpay_signature: resp.razorpay_signature
+    });
+    if (!result.success) throw new Error("We couldn't confirm your payment.");
+    store.set("h2h-access", CONFIG.accessCodeSha256);
+    $("#buy-msg").hidden = true;
+    $("#buy-ok").innerHTML = `<b>Payment successful. The course is unlocked on this device.</b>`
+      + (result.access_code ? `<span>Your access code: <b class="num">${escapeHtml(result.access_code)}</b>. Save it to unlock on other devices.</span>` : "")
+      + `<span>Payment ID: <span class="num">${escapeHtml(result.payment_id)}</span>. Keep it for support or refunds.</span>`
+      + `<a class="btn small" href="#learn">Start the course →</a>`;
+    $("#buy-ok").hidden = false;
+  } catch (err) {
+    buyError(`${err.message} If money was deducted, email ${CONFIG.contactEmail} with payment ID ${resp.razorpay_payment_id}.`);
+  } finally { buyBusy(false); }
+}
+buyBtn.addEventListener("click", async () => {
+  $("#buy-msg").hidden = true;
+  if (typeof window.Razorpay !== "function") { buyError("The payment window couldn't load. Check your connection and try again."); return; }
+  buyBusy(true, "Starting payment…");
+  let order;
+  try { order = await postJson("/api/create-order"); }
+  catch (err) { buyBusy(false); buyError(err.message); return; }
+  let failed = false;
+  const rzp = new window.Razorpay({
+    key: order.key_id,
+    order_id: order.order_id,
+    amount: order.amount,
+    currency: order.currency,
+    name: CONFIG.ownerName,
+    description: "Hook to Hit course: all 10 modules",
+    theme: { color: getComputedStyle(document.documentElement).getPropertyValue("--gate").trim() || "#178A4C" },
+    handler: verifyPayment,
+    modal: { ondismiss: () => { buyBusy(false); if (!failed) buyError("Payment cancelled. You can try again whenever you're ready."); } }
+  });
+  rzp.on("payment.failed", resp => {
+    failed = true;
+    const e = resp && resp.error ? resp.error : {};
+    buyError(`Payment failed: ${e.description || "unknown error"}.` + (e.metadata && e.metadata.payment_id ? ` Payment ID: ${e.metadata.payment_id}.` : "") + " Please try again. If money was deducted, it is usually refunded automatically.");
+  });
+  rzp.open();
 });
 
 /* ---------- views ---------- */
