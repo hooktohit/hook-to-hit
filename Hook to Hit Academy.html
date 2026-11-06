@@ -1,0 +1,735 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Hook to Hit Academy</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout concept: a level-select map. The course is a run through gates; each module is a level, each stage a gate. */
+:root {
+  --paper: #F2F5F0;
+  --card: #FFFFFF;
+  --ink: #12201A;
+  --muted: #55665D;
+  --line: #D3DDD6;
+  --gate: #178A4C;
+  --gate-soft: #DDF1E4;
+  --trap: #C93C31;
+  --trap-soft: #F8E1DE;
+  --coin: #E6A21F;
+  --crowd: #2B6CD8;
+  --on-gate: #FFFFFF;
+  --font-display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --step--1: 0.875rem; --step-0: 1rem; --step-1: 1.2rem; --step-2: 1.5rem; --step-3: 2rem; --step-4: clamp(2.1rem, 5.2vw, 3.6rem);
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0E1511; --card: #151F19; --ink: #E7EFEA; --muted: #9BB0A4; --line: #28362E;
+    --gate: #3CC27A; --gate-soft: #173726; --trap: #EE6B5F; --trap-soft: #3A1E1B; --coin: #F2BC4E; --crowd: #6B9CF0; --on-gate: #08140D;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0E1511; --card: #151F19; --ink: #E7EFEA; --muted: #9BB0A4; --line: #28362E;
+  --gate: #3CC27A; --gate-soft: #173726; --trap: #EE6B5F; --trap-soft: #3A1E1B; --coin: #F2BC4E; --crowd: #6B9CF0; --on-gate: #08140D;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink);
+  font-family: var(--font-body); font-size: var(--step-0); line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--paper); }
+a { color: var(--gate); }
+a:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--crowd); outline-offset: 2px; border-radius: 6px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h2 { font-size: var(--step-3); font-weight: 700; }
+h3 { font-size: var(--step-1); font-weight: 700; }
+p { margin: 0; }
+.wrap { max-width: 1120px; margin: 0 auto; }
+.eyebrow { font-family: var(--font-num); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+/* Header */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--paper); border-bottom: 1px solid var(--line); margin: 0 calc(-1 * max(16px, env(safe-area-inset-left, 0px))); padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); }
+.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 12px; flex-wrap: wrap; }
+.logo { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; color: var(--ink); text-decoration: none; }
+.logo-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; background: var(--gate); color: var(--on-gate); font-family: var(--font-num); font-size: 0.8rem; font-weight: 700; }
+.nav { display: flex; gap: 6px 18px; flex-wrap: wrap; align-items: center; }
+.nav a { color: var(--ink); text-decoration: none; font-weight: 600; font-size: var(--step--1); }
+.nav a:hover { color: var(--gate); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--font-body); font-weight: 700; font-size: var(--step-0); padding: 12px 20px; border-radius: 10px; border: 2px solid var(--gate); background: var(--gate); color: var(--on-gate); text-decoration: none; cursor: pointer; }
+.btn:hover { filter: brightness(1.06); }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn.ghost:hover { border-color: var(--gate); }
+.btn.small { padding: 8px 14px; font-size: var(--step--1); }
+
+/* Sections */
+section { padding-block: 64px; }
+.section-head { display: grid; gap: 10px; max-width: 680px; margin-bottom: 32px; }
+.section-head p { color: var(--muted); }
+
+/* Hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: 40px; align-items: center; padding-block: 48px 56px; }
+.hero h1 { font-size: var(--step-4); font-weight: 800; letter-spacing: -0.01em; }
+.hero h1 .gate-word { color: var(--gate); }
+.hero-copy { display: grid; gap: 20px; min-width: 0; }
+.hero-copy > p { font-size: var(--step-1); color: var(--muted); max-width: 34em; }
+.cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-family: var(--font-num); font-size: 0.8rem; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); }
+.chip.free { border-color: var(--gate); color: var(--gate); }
+.hero-art { justify-self: center; width: 100%; max-width: 330px; }
+.hero-art svg { width: 100%; height: auto; display: block; }
+@media (prefers-reduced-motion: no-preference) {
+  .run { animation: run 3.2s ease-in-out infinite; }
+  .enemy-pulse { animation: pulse 3.2s ease-in-out infinite; transform-origin: 165px 112px; }
+}
+@keyframes run { 0% { transform: translateY(0); } 70% { transform: translateY(-150px); } 100% { transform: translateY(-150px); opacity: 0; } }
+@keyframes pulse { 0%, 60% { transform: scale(1); } 75% { transform: scale(0.6); opacity: 0.4; } 100% { transform: scale(1); } }
+
+/* Earnings strip */
+.earn { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.earn-item { border-top: 3px solid var(--coin); padding-top: 14px; display: grid; gap: 4px; }
+.earn-item .big { font-family: var(--font-num); font-weight: 700; font-size: var(--step-3); }
+.earn-item p { color: var(--muted); font-size: var(--step--1); }
+.note { color: var(--muted); font-size: var(--step--1); margin-top: 16px; max-width: 70ch; }
+
+/* Loop diagram */
+.loop { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; overflow-x: auto; }
+.loop svg { display: block; min-width: 640px; width: 100%; height: auto; }
+
+/* Curriculum map */
+.stages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.stage { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.stage-gate { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; background: var(--gate-soft); border: 2px solid var(--gate); border-radius: 10px; padding: 10px 14px; }
+.stage-gate b { font-family: var(--font-display); font-size: 0.95rem; }
+.stage-gate span { font-family: var(--font-num); font-size: 0.75rem; color: var(--muted); }
+.level { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: start; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; text-decoration: none; color: var(--ink); }
+.level:hover { border-color: var(--gate); }
+.level .lv { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-num); font-weight: 700; border: 2px dashed var(--line); }
+.level.free .lv { border: 2px solid var(--gate); color: var(--gate); }
+.level h3 { font-family: var(--font-body); font-size: 1rem; font-weight: 700; line-height: 1.3; }
+.level p { color: var(--muted); font-size: var(--step--1); line-height: 1.45; margin-top: 2px; }
+.tag-free { font-family: var(--font-num); font-size: 0.7rem; color: var(--gate); letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* India */
+.india { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.india-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; display: grid; gap: 8px; align-content: start; }
+.india-card p { color: var(--muted); }
+.india-card .k { font-family: var(--font-num); font-size: 0.8rem; color: var(--gate); }
+
+/* Pricing */
+.pricing { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+.price-card { background: var(--card); border: 2px solid var(--gate); border-radius: 18px; padding: 28px; display: grid; gap: 18px; }
+.price { font-family: var(--font-display); font-weight: 800; font-size: 3rem; line-height: 1; }
+.price small { font-family: var(--font-body); font-size: 1rem; font-weight: 500; color: var(--muted); }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.checks li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; }
+.checks li::before { content: "+1"; font-family: var(--font-num); font-size: 0.72rem; font-weight: 700; color: var(--gate); padding-top: 3px; }
+.notice { border-radius: 10px; padding: 12px 14px; background: var(--trap-soft); color: var(--ink); font-size: var(--step--1); }
+.honest { display: grid; gap: 12px; }
+.honest p { color: var(--muted); }
+
+/* FAQ / policies */
+details { border-bottom: 1px solid var(--line); padding-block: 14px; }
+summary { cursor: pointer; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: "+"; font-family: var(--font-num); color: var(--gate); }
+details[open] summary::after { content: "−"; }
+details > div { padding-top: 10px; color: var(--muted); max-width: 70ch; display: grid; gap: 8px; }
+.faq { max-width: 780px; }
+
+footer { border-top: 1px solid var(--line); padding-block: 40px 48px; display: grid; gap: 24px; }
+footer .cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 32px; }
+footer p { color: var(--muted); font-size: var(--step--1); }
+
+/* Course views */
+.view-head { padding-block: 40px 8px; display: grid; gap: 10px; }
+.crumbs { display: flex; gap: 8px; flex-wrap: wrap; font-size: var(--step--1); }
+.crumbs a { color: var(--muted); }
+.gatebox { max-width: 520px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; display: grid; gap: 14px; margin-block: 24px 64px; }
+.gatebox label { font-weight: 700; }
+.gatebox input { width: 100%; font: inherit; font-family: var(--font-num); padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); }
+.err { color: var(--trap); font-weight: 600; }
+.module-list { display: grid; gap: 10px; margin-block: 24px 48px; }
+.plan { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; margin-bottom: 64px; }
+.plan ol { margin: 10px 0 0; padding-left: 22px; display: grid; gap: 6px; }
+
+article.lesson { max-width: 760px; padding-block: 8px 48px; display: grid; gap: 18px; }
+article.lesson h2 { font-size: var(--step-2); margin-top: 18px; }
+article.lesson h3 { font-size: 1.05rem; margin-top: 8px; }
+article.lesson ul, article.lesson ol { margin: 0; padding-left: 22px; display: grid; gap: 6px; }
+article.lesson .lead { font-size: var(--step-1); }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+.tbl table { border-collapse: collapse; width: 100%; font-size: var(--step--1); }
+.tbl th, .tbl td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl th { font-family: var(--font-num); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.tbl tr:last-child td { border-bottom: 0; }
+pre { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; overflow-x: auto; font-family: var(--font-num); font-size: 0.82rem; line-height: 1.55; margin: 0; }
+.exercise { border-left: 4px solid var(--coin); background: var(--card); padding: 14px 16px; border-radius: 0 12px 12px 0; }
+.exercise b { font-family: var(--font-num); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 4px; }
+.formula { font-family: var(--font-num); background: var(--gate-soft); border-radius: 10px; padding: 14px; text-align: center; font-weight: 700; }
+.figure { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; overflow-x: auto; }
+.figure svg { display: block; width: 100%; height: auto; min-width: 560px; }
+.figure figcaption { color: var(--muted); font-size: var(--step--1); margin-top: 8px; }
+figure { margin: 0; }
+.lesson-nav { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 20px; }
+.sources { font-size: var(--step--1); color: var(--muted); }
+
+@media (max-width: 900px) {
+  .stages { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .hero, .pricing, footer .cols { grid-template-columns: minmax(0, 1fr); }
+  .hero-art { max-width: 260px; order: -1; }
+  .earn, .india { grid-template-columns: minmax(0, 1fr); }
+  section { padding-block: 44px; }
+}
+@media (max-width: 520px) {
+  .stages { grid-template-columns: minmax(0, 1fr); }
+  .nav a.hide-sm { display: none; }
+}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#home"><span class="logo-mark">+10</span>Hook to Hit</a>
+    <nav class="nav" aria-label="Main">
+      <a class="hide-sm" href="#curriculum">Curriculum</a>
+      <a class="hide-sm" href="#lesson-1">Free lesson</a>
+      <a class="hide-sm" href="#pricing">Pricing</a>
+      <a href="#learn">My course</a>
+      <a class="btn small" href="#pricing" data-buy>Enrol</a>
+    </nav>
+  </div>
+</header>
+
+<main id="view-home" class="wrap">
+  <div class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Mobile game course · made for India</p>
+      <h1>Build the games from YouTube ads. <span class="gate-word">Publish them on Google Play.</span></h1>
+      <p>A 10-module course for beginners: how those ads work, how to build a number-gate game in Unity, how to earn from ads and purchases, and how to publish and get paid from India.</p>
+      <div class="cta-row">
+        <a class="btn" href="#pricing" data-buy>Get the course · <span class="num" data-price></span></a>
+        <a class="btn ghost" href="#lesson-1">Read lesson 1 free</a>
+      </div>
+      <div class="facts">
+        <span class="chip">10 modules</span>
+        <span class="chip">12-week plan</span>
+        <span class="chip">Starter C# scripts</span>
+        <span class="chip">Play Console step by step</span>
+        <span class="chip free">Lesson 1 free</span>
+      </div>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <svg viewBox="0 0 330 520" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="10" width="290" height="500" rx="40" fill="var(--card)" stroke="var(--ink)" stroke-width="3"/>
+        <rect x="135" y="28" width="60" height="8" rx="4" fill="var(--line)"/>
+        <rect x="38" y="50" width="254" height="430" rx="16" fill="var(--gate-soft)"/>
+        <polygon points="130,70 200,70 270,470 60,470" fill="var(--paper)" stroke="var(--line)" stroke-width="2"/>
+        <g class="enemy-pulse">
+          <circle cx="150" cy="104" r="7" fill="var(--trap)"/><circle cx="166" cy="104" r="7" fill="var(--trap)"/><circle cx="182" cy="104" r="7" fill="var(--trap)"/>
+          <circle cx="158" cy="120" r="7" fill="var(--trap)"/><circle cx="174" cy="120" r="7" fill="var(--trap)"/>
+        </g>
+        <text x="200" y="98" font-family="JetBrains Mono, monospace" font-size="16" font-weight="700" fill="var(--trap)">30</text>
+        <rect x="88" y="230" width="72" height="56" rx="8" fill="var(--gate)" opacity="0.9"/>
+        <text x="124" y="266" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="20" font-weight="700" fill="var(--on-gate)">+10</text>
+        <rect x="170" y="230" width="72" height="56" rx="8" fill="var(--gate)" opacity="0.9"/>
+        <text x="206" y="266" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="20" font-weight="700" fill="var(--on-gate)">x2</text>
+        <rect x="96" y="156" width="64" height="44" rx="8" fill="var(--trap)" opacity="0.85"/>
+        <text x="128" y="185" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700" fill="var(--on-gate)">-5</text>
+        <rect x="170" y="156" width="64" height="44" rx="8" fill="var(--gate)" opacity="0.9"/>
+        <text x="202" y="185" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="18" font-weight="700" fill="var(--on-gate)">x3</text>
+        <g class="run">
+          <circle cx="150" cy="420" r="8" fill="var(--crowd)"/><circle cx="168" cy="420" r="8" fill="var(--crowd)"/><circle cx="186" cy="420" r="8" fill="var(--crowd)"/>
+          <circle cx="159" cy="438" r="8" fill="var(--crowd)"/><circle cx="177" cy="438" r="8" fill="var(--crowd)"/>
+          <text x="168" y="400" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="16" font-weight="700" fill="var(--crowd)">5</text>
+        </g>
+        <circle cx="165" cy="495" r="9" fill="none" stroke="var(--line)" stroke-width="2"/>
+      </svg>
+    </div>
+  </div>
+
+  <section aria-labelledby="earn-h" style="padding-top: 8px;">
+    <div class="section-head">
+      <p class="eyebrow">Why this genre</p>
+      <h2 id="earn-h">The games behind those ads earn billions</h2>
+      <p>Reported earnings of three heavily advertised games, mostly from in-app purchases. Your first game will be far smaller; the course shows how the same machine works at a small scale.</p>
+    </div>
+    <div class="earn">
+      <div class="earn-item"><span class="big">≈ $4 bn</span><b>Royal Match</b><p>Lifetime, by late 2024</p></div>
+      <div class="earn-item"><span class="big">≈ $3.4 bn</span><b>Whiteout Survival</b><p>Launch to 2026, about $1.49 bn in 2025 alone</p></div>
+      <div class="earn-item"><span class="big">$2 bn+</span><b>Last War: Survival</b><p>Aug 2023 to Feb 2025, record $212 m in Jan 2025</p></div>
+    </div>
+    <p class="note">Third-party estimates from AppGrowing, Udonis (AppMagic data) and PocketGamer.biz. Income is never guaranteed; most first games earn little, and the course says so plainly.</p>
+  </section>
+
+  <section aria-labelledby="loop-h">
+    <div class="section-head">
+      <p class="eyebrow">The one idea behind the business</p>
+      <h2 id="loop-h">Profit comes when a player earns more than their install cost</h2>
+      <p>Every module trains one part of this loop: cheaper installs, players who come back, and more earned per player.</p>
+    </div>
+    <div class="loop" role="img" aria-label="Loop: ad creative, install, player returns, monetize, then if lifetime value is above install cost, scale up; otherwise fix the game and test again">
+      <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" font-family="Figtree, system-ui, sans-serif" font-size="14">
+        <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker></defs>
+        <g fill="none" stroke="var(--muted)" stroke-width="1.5">
+          <path d="M172 60H206" marker-end="url(#ah)"/><path d="M358 60H392" marker-end="url(#ah)"/><path d="M544 60H578" marker-end="url(#ah)"/>
+          <path d="M656 88V158" marker-end="url(#ah)"/><path d="M592 194H546" marker-end="url(#ah)"/><path d="M656 230V244" marker-end="url(#ah)"/>
+          <path d="M396 194H98V90" marker-end="url(#ah)"/><path d="M582 272H60V90" />
+        </g>
+        <g>
+          <rect x="24" y="32" width="148" height="56" rx="10" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>
+          <text x="98" y="56" text-anchor="middle" font-weight="700" fill="var(--ink)">Ad creative</text><text x="98" y="76" text-anchor="middle" font-size="12" fill="var(--muted)">real gameplay clip</text>
+          <rect x="210" y="32" width="148" height="56" rx="10" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>
+          <text x="284" y="56" text-anchor="middle" font-weight="700" fill="var(--ink)">Install</text><text x="284" y="76" text-anchor="middle" font-size="12" fill="var(--muted)">CPI under $0.40</text>
+          <rect x="396" y="32" width="148" height="56" rx="10" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>
+          <text x="470" y="56" text-anchor="middle" font-weight="700" fill="var(--ink)">Player returns</text><text x="470" y="76" text-anchor="middle" font-size="12" fill="var(--muted)">D1 retention 35%+</text>
+          <rect x="582" y="32" width="148" height="56" rx="10" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>
+          <text x="656" y="56" text-anchor="middle" font-weight="700" fill="var(--ink)">Monetize</text><text x="656" y="76" text-anchor="middle" font-size="12" fill="var(--muted)">ads + purchases</text>
+          <polygon points="592,194 656,158 720,194 656,230" fill="var(--paper)" stroke="var(--muted)" stroke-width="1.5"/>
+          <text x="656" y="199" text-anchor="middle" font-size="13" font-weight="600" fill="var(--ink)">LTV above CPI?</text>
+          <rect x="396" y="166" width="148" height="56" rx="10" fill="var(--trap-soft)" stroke="var(--trap)" stroke-width="2"/>
+          <text x="470" y="190" text-anchor="middle" font-weight="700" fill="var(--ink)">Fix or replace</text><text x="470" y="210" text-anchor="middle" font-size="12" fill="var(--muted)">the game idea</text>
+          <rect x="582" y="246" width="148" height="52" rx="10" fill="var(--gate-soft)" stroke="var(--gate)" stroke-width="2"/>
+          <text x="656" y="268" text-anchor="middle" font-weight="700" fill="var(--ink)">Scale up</text><text x="656" y="287" text-anchor="middle" font-size="12" fill="var(--muted)">spend more on ads</text>
+          <text x="570" y="186" text-anchor="middle" font-size="12" fill="var(--muted)">no</text>
+          <text x="668" y="242" font-size="12" fill="var(--muted)">yes</text>
+          <text x="250" y="186" text-anchor="middle" font-size="12" fill="var(--muted)">test again</text>
+          <text x="320" y="264" text-anchor="middle" font-size="12" fill="var(--muted)">reinvest the profit</text>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <section id="curriculum" aria-labelledby="cur-h">
+    <div class="section-head">
+      <p class="eyebrow">Curriculum</p>
+      <h2 id="cur-h">Ten levels, four gates</h2>
+      <p>Each module is one level with a lesson and a hands-on exercise. Work through them in order with the 12-week plan, at 8 to 12 hours a week.</p>
+    </div>
+    <div class="stages" id="stages"></div>
+  </section>
+
+  <section aria-labelledby="india-h">
+    <div class="section-head">
+      <p class="eyebrow">Made for India</p>
+      <h2 id="india-h">Everything that changes when you build from India</h2>
+      <p>India downloads more mobile games than almost anywhere, about 8.45 billion in FY 2024-25, but each player earns little. The course plans for that from day one.</p>
+    </div>
+    <div class="india">
+      <div class="india-card"><span class="k">Module 6</span><h3>Earning in rupees</h3><p>10,000 daily players earn roughly ₹4,750 a day from Indian ad rates, but about ₹71,000 a day at US rates. You learn how to mix both.</p></div>
+      <div class="india-card"><span class="k">Module 9</span><h3>Getting paid</h3><p>PAN in the Google payments profile, an Indian bank account that accepts international transfers, and the e-FIRA you keep for each payment.</p></div>
+      <div class="india-card"><span class="k">Module 9</span><h3>GST and income tax basics</h3><p>The ₹20 lakh GST limit, AdMob income as an export of services with an LUT, and Google collecting GST on Play sales. Then see a CA.</p></div>
+      <div class="india-card"><span class="k">Module 10</span><h3>The Online Gaming Act 2025</h3><p>Money games are banned in India. You build casual games only: no cash prizes, no paid contests, no coins that turn back into money.</p></div>
+    </div>
+  </section>
+
+  <section id="pricing" aria-labelledby="price-h">
+    <div class="pricing">
+      <div class="price-card">
+        <p class="eyebrow">One-time payment</p>
+        <div class="price"><span data-price></span> <small>incl. taxes</small></div>
+        <ul class="checks">
+          <li>All 10 modules, read on phone or laptop</li>
+          <li>Starter C# scripts for a number-gate runner</li>
+          <li>Google Play Console walkthrough, step by step</li>
+          <li>India guide to payouts, GST and the gaming law</li>
+          <li>12-week plan with weekly tasks</li>
+        </ul>
+        <button class="btn" type="button" id="buy-btn">Pay with UPI, card or netbanking</button>
+        <p class="notice" id="buy-msg" hidden>Online payment is not connected yet. Please check back soon.</p>
+        <p class="note" style="margin-top:0">Secure payment by Razorpay. Your access code appears on the screen right after payment. Enter it under <a href="#learn">My course</a>.</p>
+      </div>
+      <div class="honest">
+        <p class="eyebrow">Before you buy</p>
+        <h2 id="price-h">What this course will and won't do</h2>
+        <p>It will teach you to build, publish and monetize a casual mobile game, using ads that show your real gameplay.</p>
+        <p>It will not promise income. Most first games earn little or nothing; you will likely build several small games before one tests well.</p>
+        <p>It will not teach fake-gameplay ads or real-money games. Fake ads get banned, and money games are illegal in India.</p>
+        <p>You need a laptop or desktop that can run Unity, and an Android phone for testing. A phone alone is not enough.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="faq-h">
+    <div class="section-head">
+      <p class="eyebrow">Questions</p>
+      <h2 id="faq-h">FAQ</h2>
+    </div>
+    <div class="faq">
+      <details><summary>Do I need to know coding?</summary><div><p>No. Modules 1 to 4 need no code. Module 5 starts from C# basics with free Unity tutorials and two short starter scripts.</p></div></details>
+      <details><summary>Is the course in Hindi?</summary><div><p>The lessons are in simple English. Module 6 shows how to add Hindi and regional languages to your own game.</p></div></details>
+      <details><summary>How much money do I need besides the course?</summary><div><p>Google Play's one-time $25 developer fee (roughly ₹2,400). Unity and the other tools are free for beginners. Ad testing is optional and can start small.</p></div></details>
+      <details><summary>Can someone under 18 publish a game?</summary><div><p>Google requires developer account holders to be 18 or older. Younger learners can study and build, and publish later or with a parent's guidance on what is allowed.</p></div></details>
+      <details><summary>Is this legal in India?</summary><div><p>Yes. Casual and social games are allowed under the Online Gaming Act 2025. The course does not cover real-money games, which are banned.</p></div></details>
+      <details><summary>How long do I get access?</summary><div><p>Your access code keeps working on this site. Lessons are updated when Google's rules change.</p></div></details>
+    </div>
+  </section>
+
+  <footer>
+    <div class="cols">
+      <div style="display:grid; gap:8px;">
+        <a class="logo" href="#home"><span class="logo-mark">+10</span>Hook to Hit</a>
+        <p>A course on building and publishing casual mobile games from India.</p>
+        <p>Contact: <span data-email></span></p>
+      </div>
+      <div>
+        <details id="terms"><summary>Terms of use</summary><div><p>The course is for personal learning. Sharing your access code or copying lessons to other sites is not allowed. Content is educational and is not legal, tax or financial advice.</p><p>Results depend on your own work; no earnings are promised.</p></div></details>
+        <details id="refunds"><summary>Refund policy</summary><div><p>If the course is not right for you, email us within 7 days of purchase with your payment ID for a full refund. Refunds go back to the original payment method within 5 to 7 working days.</p></div></details>
+        <details id="privacy"><summary>Privacy policy</summary><div><p>Payments are handled by our payment provider; we never see your card or UPI details. We keep only your name, email and payment ID to give you access and answer support requests.</p></div></details>
+        <details id="contact"><summary>Contact</summary><div><p>Email <span data-email></span>. We reply within 2 working days.</p></div></details>
+      </div>
+    </div>
+    <p>© <span class="num">2026</span> <span data-owner></span>. All rights reserved.</p>
+  </footer>
+</main>
+
+<main id="view-lesson" class="wrap" hidden></main>
+<main id="view-learn" class="wrap" hidden></main>
+
+<script>
+/* ======= SETTINGS: change these before you share the site ======= */
+const CONFIG = {
+  price: "₹29",
+  paymentLink: "https://rzp.io/rzp/rhCYGdcs",                       // paste your Razorpay / Instamojo / Cashfree payment page link here
+  contactEmail: "hooktohit@gmail.com",    // your support email
+  ownerName: "Hook to Hit Academy",       // your name or business name
+  accessCodeSha256: "282c4e5a76e51fa9dad53eb58bfe5ead2f0c1e319f785999970b895adabb884b" // SHA-256 of your access code
+};
+/* ================================================================ */
+
+const STAGES = [
+  { name: "Understand", note: "why the ads work", mods: [1, 2, 3] },
+  { name: "Build", note: "a playable game", mods: [4, 5] },
+  { name: "Grow", note: "players and income", mods: [6, 7, 8] },
+  { name: "Launch", note: "live on Google Play", mods: [9, 10] }
+];
+
+const FIG_HOOKS = `<figure class="figure"><svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" font-family="Figtree, system-ui, sans-serif" font-size="13" role="img" aria-label="Three ad hooks: pull the pin, number gates, fail bait">
+<g><rect x="20" y="10" width="160" height="240" rx="22" fill="none" stroke="var(--muted)" stroke-width="1.5"/><rect x="30" y="34" width="140" height="196" rx="8" fill="var(--paper)"/>
+<rect x="55" y="54" width="90" height="160" rx="4" fill="none" stroke="var(--muted)" stroke-width="2"/><rect x="57" y="56" width="86" height="38" fill="var(--trap)" opacity="0.4"/>
+<line x1="57" x2="152" y1="98" y2="98" stroke="var(--muted)" stroke-width="4"/><circle cx="157" cy="98" r="6" fill="var(--muted)"/>
+<circle cx="78" cy="136" r="8" fill="var(--coin)"/><circle cx="94" cy="136" r="8" fill="var(--coin)"/><circle cx="110" cy="136" r="8" fill="var(--coin)"/><circle cx="126" cy="136" r="8" fill="var(--coin)"/><circle cx="86" cy="121" r="8" fill="var(--coin)"/><circle cx="102" cy="121" r="8" fill="var(--coin)"/><circle cx="118" cy="121" r="8" fill="var(--coin)"/>
+<line x1="57" x2="152" y1="154" y2="154" stroke="var(--muted)" stroke-width="4"/><circle cx="157" cy="154" r="6" fill="var(--muted)"/>
+<circle cx="100" cy="176" r="9" fill="var(--muted)"/><rect x="93" y="186" width="14" height="22" rx="4" fill="var(--muted)"/>
+<text x="100" y="274" text-anchor="middle" font-weight="700" fill="var(--ink)">Pull the pin</text><text x="100" y="292" text-anchor="middle" font-size="12" fill="var(--muted)">pull pins in the right order</text></g>
+<g><rect x="280" y="10" width="160" height="240" rx="22" fill="none" stroke="var(--muted)" stroke-width="1.5"/><rect x="290" y="34" width="140" height="196" rx="8" fill="var(--paper)"/>
+<polygon points="335,44 385,44 422,226 298,226" fill="none" stroke="var(--muted)" stroke-width="1.5"/>
+<circle cx="348" cy="60" r="4" fill="var(--trap)"/><circle cx="360" cy="60" r="4" fill="var(--trap)"/><circle cx="372" cy="60" r="4" fill="var(--trap)"/><circle cx="354" cy="70" r="4" fill="var(--trap)"/><circle cx="366" cy="70" r="4" fill="var(--trap)"/>
+<rect x="316" y="114" width="42" height="34" rx="4" fill="var(--gate)" opacity="0.85"/><text x="337" y="136" text-anchor="middle" font-weight="700" fill="var(--on-gate)">+10</text>
+<rect x="362" y="114" width="42" height="34" rx="4" fill="var(--gate)" opacity="0.85"/><text x="383" y="136" text-anchor="middle" font-weight="700" fill="var(--on-gate)">x2</text>
+<circle cx="350" cy="200" r="5" fill="var(--crowd)"/><circle cx="362" cy="200" r="5" fill="var(--crowd)"/><circle cx="374" cy="200" r="5" fill="var(--crowd)"/><circle cx="356" cy="211" r="5" fill="var(--crowd)"/><circle cx="368" cy="211" r="5" fill="var(--crowd)"/>
+<text x="360" y="274" text-anchor="middle" font-weight="700" fill="var(--ink)">Number gates</text><text x="360" y="292" text-anchor="middle" font-size="12" fill="var(--muted)">pick gates to grow your crowd</text></g>
+<g><rect x="540" y="10" width="160" height="240" rx="22" fill="none" stroke="var(--muted)" stroke-width="1.5"/><rect x="550" y="34" width="140" height="196" rx="8" fill="var(--paper)"/>
+<text x="620" y="56" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">Which one saves him?</text>
+<circle cx="620" cy="88" r="12" fill="var(--muted)"/><rect x="610" y="102" width="20" height="32" rx="6" fill="var(--muted)"/>
+<rect x="568" y="152" width="44" height="44" rx="8" fill="none" stroke="var(--muted)" stroke-width="1.5"/><line x1="574" x2="606" y1="158" y2="190" stroke="var(--trap)" stroke-width="3" opacity="0.5"/><line x1="606" x2="574" y1="158" y2="190" stroke="var(--trap)" stroke-width="3" opacity="0.5"/><text x="590" y="180" text-anchor="middle" font-size="17" font-weight="800" fill="var(--ink)">A</text>
+<rect x="628" y="152" width="44" height="44" rx="8" fill="none" stroke="var(--muted)" stroke-width="1.5"/><text x="650" y="180" text-anchor="middle" font-size="17" font-weight="800" fill="var(--ink)">B</text>
+<text x="620" y="218" text-anchor="middle" font-size="11" fill="var(--ink)">Wrong! Can you do better?</text>
+<text x="620" y="274" text-anchor="middle" font-weight="700" fill="var(--ink)">Fail bait</text><text x="620" y="292" text-anchor="middle" font-size="12" fill="var(--muted)">watch a fail, want to try</text></g>
+</svg><figcaption>Three of the most copied hooks. Each shows a simple choice in the first second.</figcaption></figure>`;
+
+const FIG_LEVEL = `<figure class="figure"><svg viewBox="0 0 720 230" xmlns="http://www.w3.org/2000/svg" font-family="Figtree, system-ui, sans-serif" font-size="13" role="img" aria-label="One level: 1 plus 10 equals 11, times 3 equals 33, which beats an enemy of 30">
+<defs><marker id="la" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--crowd)"/></marker></defs>
+<rect x="10" y="10" width="700" height="150" rx="10" fill="var(--paper)"/><line x1="10" x2="710" y1="85" y2="85" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="6 6"/>
+<circle cx="50" cy="80" r="5" fill="var(--crowd)"/><circle cx="62" cy="80" r="5" fill="var(--crowd)"/><circle cx="56" cy="91" r="5" fill="var(--crowd)"/>
+<rect x="200" y="20" width="48" height="52" rx="6" fill="var(--gate)" opacity="0.85"/><text x="224" y="51" text-anchor="middle" font-weight="700" fill="var(--on-gate)">+10</text>
+<rect x="200" y="98" width="48" height="52" rx="6" fill="var(--gate)" opacity="0.85"/><text x="224" y="129" text-anchor="middle" font-weight="700" fill="var(--on-gate)">x2</text>
+<rect x="420" y="20" width="48" height="52" rx="6" fill="var(--gate)" opacity="0.85"/><text x="444" y="51" text-anchor="middle" font-weight="700" fill="var(--on-gate)">x3</text>
+<rect x="420" y="98" width="48" height="52" rx="6" fill="var(--trap)" opacity="0.85"/><text x="444" y="129" text-anchor="middle" font-weight="700" fill="var(--on-gate)">-5</text>
+<circle cx="620" cy="78" r="5" fill="var(--trap)"/><circle cx="632" cy="78" r="5" fill="var(--trap)"/><circle cx="644" cy="78" r="5" fill="var(--trap)"/><circle cx="626" cy="90" r="5" fill="var(--trap)"/><circle cx="638" cy="90" r="5" fill="var(--trap)"/>
+<path d="M76 80 C130 80 160 46 196 46 M252 46 C310 46 370 46 416 46 M472 46 C530 46 570 80 606 80" fill="none" stroke="var(--crowd)" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#la)"/>
+<text x="56" y="66" text-anchor="middle" font-weight="700" fill="var(--ink)">1</text><text x="334" y="38" text-anchor="middle" font-weight="700" fill="var(--ink)">11</text><text x="545" y="44" text-anchor="middle" font-weight="700" fill="var(--ink)">33</text><text x="632" y="116" text-anchor="middle" font-weight="700" fill="var(--ink)">30</text>
+<text x="56" y="188" text-anchor="middle" font-weight="700" fill="var(--ink)">Start: 1</text><text x="224" y="188" text-anchor="middle" font-weight="700" fill="var(--ink)">1 + 10 = 11</text><text x="444" y="188" text-anchor="middle" font-weight="700" fill="var(--ink)">11 x 3 = 33</text><text x="632" y="188" text-anchor="middle" font-weight="700" fill="var(--ink)">33 beats 30</text>
+<text x="56" y="207" text-anchor="middle" font-size="12" fill="var(--muted)">runs by itself</text><text x="224" y="207" text-anchor="middle" font-size="12" fill="var(--muted)">player drags to a gate</text><text x="444" y="207" text-anchor="middle" font-size="12" fill="var(--muted)">-5 is the trap</text><text x="632" y="207" text-anchor="middle" font-size="12" fill="var(--muted)">bigger number wins</text>
+</svg><figcaption>An example level for the number-gate runner you build in this module.</figcaption></figure>`;
+
+const FIG_LAUNCH = `<figure class="figure"><svg viewBox="0 0 720 170" xmlns="http://www.w3.org/2000/svg" font-family="Figtree, system-ui, sans-serif" font-size="13" role="img" aria-label="Five launch phases: account, prepare, closed test of 12 testers for 14 days, apply for production, go live">
+<g>
+<rect x="10" y="10" width="132" height="100" rx="10" fill="var(--card)" stroke="var(--line)" stroke-width="2"/><text x="22" y="36" font-weight="700" fill="var(--ink)">1 Account</text><text x="22" y="62" font-size="12" fill="var(--ink)">ID check, $25</text><text x="22" y="80" font-size="12" fill="var(--muted)">a few days</text>
+<rect x="152" y="10" width="132" height="100" rx="10" fill="var(--card)" stroke="var(--line)" stroke-width="2"/><text x="164" y="36" font-weight="700" fill="var(--ink)">2 Prepare</text><text x="164" y="62" font-size="12" fill="var(--ink)">build and listing</text><text x="164" y="80" font-size="12" fill="var(--muted)">your own pace</text>
+<rect x="294" y="10" width="132" height="100" rx="10" fill="var(--gate-soft)" stroke="var(--gate)" stroke-width="2.5"/><text x="306" y="36" font-weight="700" fill="var(--ink)">3 Closed test</text><text x="306" y="62" font-size="12" fill="var(--ink)">12 testers</text><text x="306" y="80" font-size="12" fill="var(--muted)">14 days in a row</text>
+<rect x="436" y="10" width="132" height="100" rx="10" fill="var(--card)" stroke="var(--line)" stroke-width="2"/><text x="448" y="36" font-weight="700" fill="var(--ink)">4 Apply</text><text x="448" y="62" font-size="12" fill="var(--ink)">for production</text><text x="448" y="80" font-size="12" fill="var(--muted)">often a few days</text>
+<rect x="578" y="10" width="132" height="100" rx="10" fill="var(--card)" stroke="var(--line)" stroke-width="2"/><text x="590" y="36" font-weight="700" fill="var(--ink)">5 Go live</text><text x="590" y="62" font-size="12" fill="var(--ink)">review, then</text><text x="590" y="80" font-size="12" fill="var(--muted)">staged rollout</text>
+<line x1="360" x2="360" y1="110" y2="124" stroke="var(--muted)" stroke-width="1.5"/><text x="360" y="144" text-anchor="middle" font-size="12" fill="var(--muted)">The 14-day clock starts only after 12 testers opt in</text>
+</g></svg><figcaption>A first launch on a new personal account takes about three weeks. Phases are not to scale.</figcaption></figure>`;
+
+const MODULES = [
+{ n: 1, title: "How the ads work", blurb: "Five hooks, why studios use them, and the honest twist.", free: true, body: `
+<p class="lead">The ads show a simple puzzle anyone thinks they can solve, while the real game is usually a deeper strategy or match-3 game. The ad sells to millions; the game earns from the few who stay and spend.</p>
+${FIG_HOOKS}
+<h2>The five common hooks</h2>
+<div class="tbl"><table><thead><tr><th>Hook</th><th>What you see</th><th>Famous example</th></tr></thead><tbody>
+<tr><td>Pull the pin</td><td>Pull pins in the right order to save a character or get treasure</td><td>Homescapes, Gardenscapes, Hero Wars</td></tr>
+<tr><td>Number gates</td><td>Run through +10 or x2 gates to grow an army, then fight a boss</td><td>Last War: Survival, Mob Control</td></tr>
+<tr><td>Fail bait</td><td>The "player" makes an obvious mistake so you want to do it right</td><td>Homescapes ads with the wrong tool</td></tr>
+<tr><td>Challenge text</td><td>"Only 5% can solve this"</td><td>Playrix ads cited in a UK ruling</td></tr>
+<tr><td>Celebrity or creator</td><td>A famous face says the game is real</td><td>Last War, Royal Kingdom</td></tr>
+</tbody></table></div>
+<h2>Why studios run them</h2>
+<p>A curious tap is cheap, so installs cost less. One analysis argues that even if 98% of players uninstall within hours, the spending of the remaining 2% pays for the ads.</p>
+<h2>The newer twist</h2>
+<p>Last War: Survival built the ad mini-game into the real game, then advertised exactly that, with ads saying other games fake their ads and this one does not. This course follows that model: catchy ads that only show what is really in your game.</p>
+<div class="exercise"><b>Exercise</b>Watch 5 game ads on YouTube this week. For each, note the hook, the game's name, and after installing, whether the ad's gameplay appears in the first 10 minutes.</div>
+<p class="sources">Sources: <a href="https://techraptor.net/gaming/news/uk-asa-upholds-misleading-pin-pulling-puzzle-ad-claims-against-playrix" target="_blank" rel="noopener">TechRaptor</a>, <a href="https://ts.yourstory.com/2024/08/ugly-truth-mobile-game-ads" target="_blank" rel="noopener">YourStory</a>, <a href="https://blog.insightrackr.com/en/docs/LastWarIntelligence" target="_blank" rel="noopener">Insightrackr</a>.</p>` },
+{ n: 2, title: "Hit games and their money", blurb: "What the biggest ad-heavy games earned, and the India picture.", body: `
+<p class="lead">The biggest earners are deep strategy and puzzle games that monetize through in-app purchases. Pure ad-funded hyper-casual games earn far less per player.</p>
+<div class="tbl"><table><thead><tr><th>Game</th><th>Developer</th><th>Reported earnings</th><th>Period</th></tr></thead><tbody>
+<tr><td>Royal Match</td><td>Dream Games</td><td>Nearly $4 billion</td><td>Lifetime, by late 2024</td></tr>
+<tr><td>Whiteout Survival</td><td>Century Games</td><td>About $3.4 billion</td><td>Launch to 2026</td></tr>
+<tr><td>Last War: Survival</td><td>First Fun</td><td>Over $2 billion</td><td>Aug 2023 to Feb 2025</td></tr>
+<tr><td>Hero Wars</td><td>Nexters (GDEV)</td><td>Over $1 billion bookings</td><td>2017 to Q3 2021</td></tr>
+<tr><td>Mob Control</td><td>Voodoo</td><td>Nearly $100 million gross</td><td>Since 2021</td></tr>
+<tr><td>Count Masters</td><td>FreePlay</td><td>250 million downloads</td><td>2021 to Jan 2024</td></tr>
+</tbody></table></div>
+<p>The figures are third-party estimates or company reports over different periods, so compare them loosely. Last War shows no in-game ads at all and earns only from purchases.</p>
+<h2>The India picture</h2>
+<p>India had about 8.45 billion game downloads in FY 2024-25, yet only about $1.1 billion (roughly ₹10,500 crore) in purchases and ad revenue in 2025. Indian studios get most downloads at home but earn most revenue abroad.</p>
+<ul><li><b>Ludo King</b> (Gametion, Mumbai): India's top download since 2017, over 1.25 billion downloads.</li><li><b>Indian Bikes Driving 3D</b> (Rohit Gaming Studio): a small Indian studio in the national top downloads.</li><li><b>Cricket League</b>: cricket themes top Indian charts.</li></ul>
+<p>Indian themes win downloads at home; revenue usually needs players in the US, UK, Europe, Japan or Korea as well.</p>
+<div class="exercise"><b>Exercise</b>Pick two games from the table, play each for 30 minutes, and list every way they ask you to spend money.</div>
+<p class="sources">Sources: <a href="https://www.pocketgamer.biz/last-war-survival-surpasses-2bn-after-record-player-spending-in-early-2025" target="_blank" rel="noopener">PocketGamer.biz</a>, <a href="https://www.blog.udonis.co/statistics/whiteout-survival" target="_blank" rel="noopener">Udonis</a>, <a href="https://sensortower.com/blog/india-mobile-game-insights-2025" target="_blank" rel="noopener">Sensor Tower</a>, <a href="https://yourstory.com/2026/07/indias-mobile-gaming-revenue-reach-24-billion-2029-report" target="_blank" rel="noopener">YourStory</a>.</p>` },
+{ n: 3, title: "The numbers", blurb: "CPI, retention, LTV and ROAS: the scorecard publishers use.", body: `
+<p class="lead">The whole business is one comparison: if a player brings in more money over their lifetime (LTV) than it cost to get them (CPI), you buy more ads and grow. If not, you fix the game or drop it.</p>
+<p class="formula">Profit per player = LTV − CPI</p>
+<div class="tbl"><table><thead><tr><th>Metric</th><th>What it means</th><th>Hyper-casual target</th></tr></thead><tbody>
+<tr><td>CPI</td><td>Ad spend divided by installs</td><td>Under $0.40</td></tr>
+<tr><td>D1 retention</td><td>Share of players who return the next day</td><td>Over 35%</td></tr>
+<tr><td>D3 retention</td><td>Share who return on day 3</td><td>Over 15%</td></tr>
+<tr><td>LTV</td><td>Total money one player brings in</td><td>Typically $0.30 to $2</td></tr>
+<tr><td>ROAS</td><td>Revenue divided by ad spend</td><td>Above 100% means profit</td></tr>
+</tbody></table></div>
+<p>Hyper-casual games earn mostly from ads and need very cheap installs. Hybrid-casual and strategy games add purchases and progression, so they can afford installs costing $1 or more.</p>
+<div class="exercise"><b>Exercise</b>If your CPI is $0.35 and players watch 4 ads a day at a $1 eCPM, how many days must the average player keep playing to pay back their install?</div>
+<p class="sources">Sources: <a href="https://support.homagames.com/knowledge/how-to-read-the-results-of-a-test" target="_blank" rel="noopener">Homa</a>, <a href="https://mobidictum.com/a-b-testing-and-publishing-process-for-mobile-games-tapnation/" target="_blank" rel="noopener">TapNation via Mobidictum</a>.</p>` },
+{ n: 4, title: "Idea and prototype", blurb: "Hook plus twist, the 10-second rule, and killing ideas fast.", body: `
+<p class="lead">Start from a hook that already gets clicks, add one twist, and build only one playable level before spending anything. Publishers turn a prototype into test ads in 1 to 2 days and test it in 2 to 3 more, so speed beats polish.</p>
+<ol><li><b>Hook + twist:</b> take a proven mechanic (number gates, pin pull, hole, screw puzzle, merge) and change one thing: the theme, the goal, or the control.</li><li><b>The 10-second rule:</b> a stranger must understand the game from a 10-second silent video.</li><li><b>One-level prototype:</b> the core loop, a win and a fail. No menus, no shop.</li><li><b>Kill fast:</b> if the test numbers miss the Module 3 targets, move to the next idea.</li></ol>
+<h2>Ideas with an Indian angle</h2>
+<p>Cricket, ludo and carrom, auto-rickshaws and trucks, street food, festivals like Diwali and Holi. Keep art and text easy to swap, so one game can ship a desi version for India and a neutral version for global players.</p>
+<div class="exercise"><b>Exercise</b>Write 10 hook + twist ideas in one line each, then pick the 3 that look best as a 10-second video.</div>` },
+{ n: 5, title: "Build it in Unity", blurb: "A 4-week build path with starter scripts for a gate runner.", body: `
+<p class="lead">Unity with C# is the safest choice, because most hyper-casual publishers and ad networks ship their tools for it. Godot is a free, lighter alternative for slower laptops.</p>
+${FIG_LEVEL}
+<div class="tbl"><table><thead><tr><th>Need</th><th>Beginner pick</th></tr></thead><tbody>
+<tr><td>Game engine</td><td>Unity 6 LTS (C#) or Godot</td></tr><tr><td>Code editor</td><td>Visual Studio or VS Code</td></tr><tr><td>Art and sound</td><td>Kenney free assets, Unity Asset Store, Freesound (check licences)</td></tr><tr><td>Analytics</td><td>GameAnalytics or Firebase</td></tr><tr><td>Ads</td><td>Google AdMob, AppLovin MAX for mediation</td></tr><tr><td>Backup</td><td>GitHub Desktop</td></tr><tr><td>Test phone</td><td>Any cheap Android phone with USB debugging on</td></tr>
+</tbody></table></div>
+<h2>The 4-week build path</h2>
+<ol>
+<li><b>Week 1, set up:</b> install Unity Hub and Unity 6 LTS with Android Build Support. Create a 3D (URP) project, switch the platform to Android, set portrait. Learn C# basics from free Unity Learn tutorials.</li>
+<li><b>Week 2, core loop:</b> a crowd that runs forward, drag-to-steer, gates that add or multiply, and an enemy group at the end. Show the count as a big number.</li>
+<li><b>Week 3, game feel:</b> 10 short levels, coins and one upgrade, particles, sound, light vibration, and saving with PlayerPrefs.</li>
+<li><b>Week 4, measure and build:</b> GameAnalytics events for level start, complete and fail; test on a cheap phone; make an Android build.</li>
+</ol>
+<h2>Starter scripts</h2>
+<p>The crowd moves forward and follows your finger sideways:</p>
+<pre>using UnityEngine;
+
+public class Crowd : MonoBehaviour
+{
+    public int Count = 1;
+    public float forwardSpeed = 6f;
+    public float sideSpeed = 0.02f;
+
+    void Update()
+    {
+        transform.Translate(Vector3.forward * forwardSpeed * Time.deltaTime);
+
+        if (Input.touchCount &gt; 0 &amp;&amp; Input.GetTouch(0).phase == TouchPhase.Moved)
+        {
+            float dx = Input.GetTouch(0).deltaPosition.x * sideSpeed;
+            Vector3 p = transform.position;
+            p.x = Mathf.Clamp(p.x + dx, -3f, 3f);
+            transform.position = p;
+        }
+    }
+}</pre>
+<p>Each gate changes the count once, then switches off:</p>
+<pre>using UnityEngine;
+
+public class Gate : MonoBehaviour
+{
+    public enum Op { Add, Multiply }
+    public Op operation = Op.Add;
+    public int value = 10;
+
+    void OnTriggerEnter(Collider other)
+    {
+        Crowd crowd = other.GetComponent&lt;Crowd&gt;();
+        if (crowd == null) return;
+
+        crowd.Count = operation == Op.Add ? crowd.Count + value : crowd.Count * value;
+        gameObject.SetActive(false);
+    }
+}</pre>
+<p>Give the crowd a collider and a Rigidbody with Is Kinematic ticked, tick Is Trigger on each gate's collider, and set Active Input Handling to Both in Player Settings.</p>
+<h2>Common beginner mistakes</h2>
+<ul><li>Building menus, shops and 50 levels before testing whether the core loop is fun</li><li>Using unlicensed art and music, which can get the app removed</li><li>Testing only in the Unity editor, never on a real low-end phone</li><li>No backups</li></ul>
+<div class="exercise"><b>Exercise</b>Finish a 10-level build with one upgrade, play it on your phone, and record a 15-second clip of the best moment. Ask 3 friends to play without help and note where they get stuck.</div>` },
+{ n: 6, title: "Ads and purchases", blurb: "Rewarded ads, rupee price points, and what Indian players pay.", body: `
+<p class="lead">Where your players live matters more than how many you have: a rewarded video earns roughly $10 to $25 per 1,000 views on US iPhones but about $0.30 to $1.00 on Indian Android phones.</p>
+<p><b>Ad formats, best to worst for earnings:</b> rewarded video, then interstitial, then banner.</p>
+<p class="formula">Daily ad revenue = daily players × ads per player × eCPM ÷ 1,000</p>
+<p>10,000 daily players watching 5 ads each = 50,000 views. At a $1 eCPM that is about ₹4,750 a day; at $15 it is about ₹71,000 a day.</p>
+<h2>For Indian players</h2>
+<ul><li>Keep the download small and the game playable offline.</li><li>Add Hindi first, then Tamil, Telugu, Bengali or Marathi where your downloads come from.</li><li>Price purchases low, such as ₹10 to ₹99 for remove-ads or a starter pack. Google Play billing accepts UPI and cards.</li><li>Use mediation so AdMob, InMobi and others bid for each ad.</li><li>Google keeps 15% of Play purchases on your first $1 million a year, after you enrol in that tier.</li></ul>
+<h2>Google Play ad rules</h2>
+<p>No full-screen ads at the start of a level or before the loading screen, and full-screen ads must be closable after 15 seconds. Rewarded ads that players choose are allowed.</p>
+<div class="exercise"><b>Exercise</b>Add one rewarded ad ("watch to double your coins") and one remove-ads purchase to your prototype, using test ad IDs only.</div>
+<p class="sources">Sources: <a href="https://mwm.ai/glossary/ecpm" target="_blank" rel="noopener">MWM</a>, <a href="https://cas.ai/?p=11066" target="_blank" rel="noopener">CAS.ai</a>, <a href="https://support.google.com/paymentscenter/answer/112622" target="_blank" rel="noopener">Google Play Help</a>.</p>` },
+{ n: 7, title: "Honest ad creatives", blurb: "Clickable ads that only show what is in your game.", body: `
+<p class="lead">The rule for this course: every moment shown in an ad must be playable in the first few minutes of the game. You keep the click power of the famous hooks without the ban risk.</p>
+<ol><li><b>The first 3 seconds:</b> start mid-action, no logo, big readable numbers.</li><li><b>Five honest angles:</b> a real fail, a near-win, a satisfying chain reaction, a "which path?" choice, weak-to-strong upgrade.</li><li><b>Volume beats perfection:</b> 5 to 10 short variants per idea.</li><li><b>Channels:</b> Google App campaigns, Meta, TikTok, Unity Ads, AppLovin. Start with one and a small fixed budget.</li><li><b>Read the result:</b> cost per install first, then whether players come back the next day.</li></ol>
+<h2>Buying ads from India</h2>
+<ul><li>Test cheaply in India: installs cost far less, so a small budget tells you whether players come back.</li><li>Then test the winning ad in one higher-paying country such as the US or UK.</li><li>Write separate ads per market: Hinglish or Hindi captions for India, plain English elsewhere.</li><li>Keep every ad invoice for your tax records.</li></ul>
+<div class="exercise"><b>Exercise</b>Make 5 ad variants of your prototype, 10 to 15 seconds each, and note which hook each one uses.</div>` },
+{ n: 8, title: "Publisher or solo", blurb: "Pitching Voodoo-style publishers vs self-publishing.", body: `
+<p class="lead">For a beginner, sending prototypes to a hyper-casual publisher is the lower-risk road: the publisher pays for ad tests and scaling, and you share the revenue.</p>
+<div class="tbl"><table><thead><tr><th>Route</th><th>Who pays for ads</th><th>Best when</th></tr></thead><tbody>
+<tr><td>Publisher (Voodoo, Homa, CrazyLabs, SayGames, Supersonic, TapNation, Rollic)</td><td>Publisher, for a revenue share</td><td>You have no ad budget</td></tr>
+<tr><td>Self-publish on Google Play</td><td>You</td><td>You have savings to test with</td></tr>
+</tbody></table></div>
+<h2>Store listing checklist</h2>
+<ul><li>Screenshots and video show real gameplay</li><li>No "#1", "free" or "no ads" text in the icon or title</li><li>A description with no false claims</li><li>Privacy policy link and correct content rating</li></ul>
+<div class="exercise"><b>Exercise</b>Shortlist 3 publishers, read their submission pages, and note the CPI and D1 targets each asks for.</div>` },
+{ n: 9, title: "Publish on Google Play", blurb: "Account, build settings, 12-tester test, payouts and tax in India.", body: `
+<p class="lead">Budget about three weeks for a first launch on a new personal account: 14 days of required closed testing, then the production-access application, then review.</p>
+${FIG_LAUNCH}
+<ol>
+<li><b>Create your account</b> at play.google.com/console. You must be 18 or older. Pay the one-time $25 fee (about ₹2,400) with a card enabled for international payments, and verify with ID. Use your name exactly as on your PAN.</li>
+<li><b>Prepare the build in Unity:</b> a permanent package name, a version code that rises with each upload, target API level 36 (required since 31 Aug 2026), IL2CPP with ARM64, Build App Bundle (.aab), and a backed-up keystore with Play App Signing.</li>
+<li><b>Create the app</b> in Play Console as a free game. A free app cannot become paid later.</li>
+<li><b>Fill in App content:</b> privacy policy, ads declaration, content rating, target audience and the Data safety form.</li>
+<li><b>Store listing:</b> name up to 30 characters, short description up to 80, full description up to 4,000, a 512 x 512 icon, a 1024 x 500 feature graphic and at least 2 real screenshots.</li>
+<li><b>Internal test</b> on your own phone to catch crashes.</li>
+<li><b>Closed test:</b> at least 12 testers opted in for 14 days in a row, who actually play.</li>
+<li><b>Apply for production access</b> and answer Google's questions about the test.</li>
+<li><b>Release</b> with a staged rollout and submit for review.</li>
+<li><b>After launch:</b> watch Android vitals, reply to reviews, link AdMob with an app-ads.txt file, and update the target API level every year.</li>
+</ol>
+<h2>Getting paid in India</h2>
+<ul><li>Google Play sales arrive monthly in your Indian bank account after Google's 15% fee.</li><li>AdMob pays by international wire once your balance passes $100 (about ₹9,500).</li><li>Add your PAN in the Google payments profile; it serves as the tax number on the W-8BEN form.</li><li>Use an account in your own name that accepts SWIFT transfers, and keep the e-FIRA for every payment.</li></ul>
+<h2>Tax basics</h2>
+<p>Game earnings are business income for your ITR. GST registration is required above ₹20 lakh yearly turnover (₹10 lakh in special category states). AdMob income from abroad is usually an export of services, zero-rated if you file an LUT. Google collects GST on Play sales to Indian buyers itself. This is a starting point, not tax advice; speak to a chartered accountant.</p>
+<div class="exercise"><b>Exercise</b>Create the account, write your privacy policy and store text, and line up 15 testers before your build is ready.</div>
+<p class="sources">Sources: <a href="https://support.google.com/googleplay/android-developer/answer/14151465" target="_blank" rel="noopener">Google Play testing rules</a>, <a href="https://support.google.com/googleplay/android-developer/answer/11926878" target="_blank" rel="noopener">target API</a>, <a href="https://www.xflowpay.com/blog/get-paid-from-adsense-in-india" target="_blank" rel="noopener">Xflow</a>, <a href="https://disytax.com/?p=24063" target="_blank" rel="noopener">DisyTax</a>.</p>` },
+{ n: 10, title: "Rules in India", blurb: "Banned ads, the 2025 gaming law, ASCI and data privacy.", body: `
+<p class="lead">A big studio can survive a banned ad; a beginner's Google Play account usually cannot survive a policy strike. Fake gameplay is the one part of these games not to copy.</p>
+<div class="tbl"><table><thead><tr><th>Case</th><th>What happened</th><th>Lesson</th></tr></thead><tbody>
+<tr><td>Playrix, UK, Oct 2020</td><td>Pin-pull ads for Homescapes and Gardenscapes banned as not representative</td><td>A small disclaimer did not help</td></tr>
+<tr><td>Playrix's fix</td><td>Moved the pin mini-game earlier in the game</td><td>What the ad shows must be reachable early</td></tr>
+<tr><td>Google Play policy</td><td>Prohibits deception in the app, its ads and its listing</td><td>Ads inside your app count as your app</td></tr>
+</tbody></table></div>
+<h2>Rules that apply in India</h2>
+<ul><li><b>Online Gaming Act 2025:</b> bans online money games, where players pay or stake money hoping to win money, and bans advertising them. Its rules take effect from 1 May 2026; casual social games stay allowed. So: no cash prizes, no paid-entry contests, no coins that can be cashed out.</li><li><b>ASCI</b> handles complaints about misleading ads shown in India, including YouTube and Instagram ads.</li><li><b>Digital Personal Data Protection Act, 2023</b> covers personal data your game and its SDKs collect.</li></ul>
+<div class="exercise"><b>Exercise</b>Check each of your Module 7 ads against one question: can a new player see this within 5 minutes of installing?</div>
+<p class="sources">Sources: <a href="https://www.pocketgamer.biz/asa-bans-gardenscapes-and-homescapes-misleading-ads" target="_blank" rel="noopener">PocketGamer.biz</a>, <a href="https://conventuslaw.com/report/new-game-new-rules-indias-new-online-gaming-framework/" target="_blank" rel="noopener">Conventus Law</a>, <a href="https://www.exchange4media.com/advertising-news/asci-finds-14-ads-violating-gaming-ad-regulations-during-ipl-broadcast-119635.html" target="_blank" rel="noopener">exchange4media</a>.</p>` }
+];
+
+const PLAN = [
+  "Weeks 1 to 2: Modules 1 to 3; play 10 ad-heavy games and log their hooks",
+  "Weeks 3 to 5: Module 5; learn Unity basics and finish a tutorial game",
+  "Week 6: Module 4; pick one hook + twist and build a one-level prototype",
+  "Week 7: Module 7; make 5 honest ad variants",
+  "Week 8: Module 8; submit to publishers or run a small test; create your Play account with PAN, card and bank ready",
+  "Weeks 9 to 10: improve or replace the idea; start the 14-day closed test with 12+ testers",
+  "Week 11: Module 6; add rewarded ads and one purchase",
+  "Week 12: apply for production access and publish (Modules 9 and 10)"
+];
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+};
+const isUnlocked = () => store.get("h2h-access") === CONFIG.accessCodeSha256;
+
+document.querySelectorAll("[data-price]").forEach(el => el.textContent = CONFIG.price);
+document.querySelectorAll("[data-email]").forEach(el => el.textContent = CONFIG.contactEmail);
+document.querySelectorAll("[data-owner]").forEach(el => el.textContent = CONFIG.ownerName);
+
+function levelCard(m, href) {
+  return `<a class="level${m.free ? " free" : ""}" href="${href}"><span class="lv">${m.n}</span><span><h3>${m.title}</h3><p>${m.blurb}</p>${m.free ? '<span class="tag-free">Free preview</span>' : ""}</span></a>`;
+}
+
+$("#stages").innerHTML = STAGES.map((s, i) => `<div class="stage"><div class="stage-gate"><b>${s.name}</b><span>gate ${i + 1} · ${s.note}</span></div>${s.mods.map(n => levelCard(MODULES[n - 1], n === 1 ? "#lesson-1" : "#learn")).join("")}</div>`).join("");
+
+/* ---------- buy button ---------- */
+$("#buy-btn").addEventListener("click", () => {
+  if (CONFIG.paymentLink) { window.location.href = CONFIG.paymentLink; }
+  else { $("#buy-msg").hidden = false; }
+});
+document.querySelectorAll("[data-buy]").forEach(a => {
+  if (CONFIG.paymentLink) { a.href = CONFIG.paymentLink; a.target = "_blank"; a.rel = "noopener"; }
+});
+
+/* ---------- views ---------- */
+function lessonPage(m, back) {
+  const prev = MODULES[m.n - 2], next = MODULES[m.n];
+  const navPrev = prev ? `<a class="btn ghost small" href="#m${prev.n}">← Module ${prev.n}</a>` : `<span></span>`;
+  const navNext = next ? `<a class="btn small" href="#m${next.n}">Module ${next.n}: ${next.title} →</a>` : `<a class="btn small" href="#learn">Back to course</a>`;
+  return `<div class="view-head"><div class="crumbs"><a href="${back}">${back === "#home" ? "Home" : "My course"}</a><span>/</span><span>Module ${m.n}</span></div><p class="eyebrow">Module ${m.n} of 10</p><h1 style="font-size:var(--step-3)">${m.title}</h1></div><article class="lesson">${m.body}</article>`
+    + (back === "#home" ? `<div class="lesson-nav" style="margin-bottom:64px"><a class="btn ghost small" href="#home">← Home</a><a class="btn small" href="#pricing">Unlock all 10 modules · ${CONFIG.price}</a></div>` : `<div class="lesson-nav" style="margin-bottom:64px">${navPrev}${navNext}</div>`);
+}
+
+function learnPage() {
+  if (!isUnlocked()) {
+    return `<div class="view-head"><p class="eyebrow">My course</p><h1 style="font-size:var(--step-3)">Enter your access code</h1><p style="color:var(--muted);max-width:60ch">You receive the code after payment, on the confirmation screen and by email. Lesson 1 is free without a code.</p></div>
+    <form class="gatebox" id="code-form" novalidate><label for="code-input">Access code</label><input id="code-input" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. ABCD-1234"><p class="err" id="code-err" hidden>That code doesn't match. Check for typos, or email ${CONFIG.contactEmail} with your payment ID.</p><div class="cta-row"><button class="btn" type="submit">Unlock course</button><a class="btn ghost" href="#pricing">Buy access</a></div></form>`;
+  }
+  return `<div class="view-head"><p class="eyebrow">My course</p><h1 style="font-size:var(--step-3)">All 10 modules</h1><p style="color:var(--muted)">Work through them in order, one exercise at a time.</p></div>
+  <div class="module-list">${MODULES.map(m => levelCard(m, "#m" + m.n)).join("")}</div>
+  <div class="plan"><h3>Your 12-week plan</h3><ol>${PLAN.map(p => `<li>${p}</li>`).join("")}</ol></div>`;
+}
+
+async function sha256(text) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function show(id) {
+  ["view-home", "view-lesson", "view-learn"].forEach(v => $("#" + v).hidden = v !== id);
+}
+
+function route() {
+  const h = (location.hash || "#home").slice(1);
+  const mm = h.match(/^m(\d{1,2})$/);
+  if (h === "lesson-1") {
+    $("#view-lesson").innerHTML = lessonPage(MODULES[0], "#home"); show("view-lesson"); window.scrollTo(0, 0); return;
+  }
+  if (mm) {
+    const m = MODULES[Number(mm[1]) - 1];
+    if (m && (m.free || isUnlocked())) { $("#view-lesson").innerHTML = lessonPage(m, isUnlocked() ? "#learn" : "#home"); show("view-lesson"); window.scrollTo(0, 0); return; }
+    location.hash = "#learn"; return;
+  }
+  if (h === "learn") {
+    $("#view-learn").innerHTML = learnPage(); show("view-learn"); window.scrollTo(0, 0);
+    const form = $("#code-form");
+    if (form) form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const val = $("#code-input").value.trim().toUpperCase();
+      let ok = false;
+      try { ok = (await sha256(val)) === CONFIG.accessCodeSha256; } catch (err) { ok = false; }
+      if (ok) { store.set("h2h-access", CONFIG.accessCodeSha256); route(); }
+      else { $("#code-err").hidden = false; }
+    });
+    return;
+  }
+  show("view-home");
+  const target = document.getElementById(h);
+  if (target && h !== "home") { target.scrollIntoView(); } else { window.scrollTo(0, 0); }
+}
+window.addEventListener("hashchange", route);
+route();
+</script>
+
+</body></html>
